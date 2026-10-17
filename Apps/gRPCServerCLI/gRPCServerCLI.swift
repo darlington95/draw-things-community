@@ -489,9 +489,11 @@ struct gRPCServerCLI: ParsableCommand {
       ModelZoo.externalUrls = [
         URL(fileURLWithPath: modelsDirectory), URL(fileURLWithPath: secondaryModelsDirectory),
       ]
+      ModelZoo.isExternalUrlsPreferred = true
     } else {
       serverLoRALoader = nil
       ModelZoo.externalUrls = [URL(fileURLWithPath: modelsDirectory)]
+      ModelZoo.isExternalUrlsPreferred = true
     }
 
     if noFlashAttention {
