@@ -700,12 +700,13 @@ public final class ImageGenerationServiceImpl: ImageGenerationServiceProvider {
         {
           fileUrls.append(contentsOf: urls)
         }
-        if let externalUrl = ModelZoo.externalUrls.first,
-          let urls = try? fileManager.contentsOfDirectory(
+        for externalUrl in ModelZoo.externalUrls {
+          if let urls = try? fileManager.contentsOfDirectory(
             at: externalUrl, includingPropertiesForKeys: [.fileSizeKey],
             options: [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants])
-        {
-          fileUrls.append(contentsOf: urls)
+          {
+            fileUrls.append(contentsOf: urls)
+          }
         }
         // Check if the file ends with ckpt. If it is, this is a file we need to fill.
         $0.files = fileUrls.compactMap {
