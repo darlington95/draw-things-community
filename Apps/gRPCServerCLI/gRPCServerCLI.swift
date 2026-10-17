@@ -463,34 +463,41 @@ struct gRPCServerCLI: ParsableCommand {
 
     let serverLoRALoader: ServerLoRALoader?
     // Add the custom models directory if provided
-    if let secondaryModelsDirectory = secondaryModelsDirectory, let accessKey = blobStoreAccessKey,
-      let secret = blobStoreSecret, let blobStoreBucket = blobStoreBucket,
-      let blobStoreEndpoint = blobStoreEndpoint
-    {
-
-      let r2Client = R2Client(
-        accessKey: accessKey, secret: secret, endpoint: blobStoreEndpoint, bucket: blobStoreBucket)
-      print("Create R2Client: \(r2Client)")
-
-      let localLoRAManager = LocalLoRAManager(
-        r2Client: r2Client, localDirectory: secondaryModelsDirectory)
-      serverLoRALoader = ServerLoRALoader(localLoRAManager: localLoRAManager)
+    if let secondaryModelsDirectory = secondaryModelsDirectory {
       // Check if directory exists (either it was there already or we created it)
       if fileManager.fileExists(atPath: secondaryModelsDirectory, isDirectory: &isDirectory),
         isDirectory.boolValue
       {
         print("Using another models directory: \(secondaryModelsDirectory)")
+        // If blob store parameters are provided, use them for R2 client
+        if let accessKey = blobStoreAccessKey,
+          let secret = blobStoreSecret,
+          let blobStoreBucket = blobStoreBucket,
+          let blobStoreEndpoint = blobStoreEndpoint
+        {
+          let r2Client = R2Client(
+            accessKey: accessKey, secret: secret, endpoint: blobStoreEndpoint, bucket: blobStoreBucket)
+          print("Create R2Client: \(r2Client)")
+
+          let localLoRAManager = LocalLoRAManager(
+            r2Client: r2Client, localDirectory: secondaryModelsDirectory)
+          serverLoRALoader = ServerLoRALoader(localLoRAManager: localLoRAManager)
+        } else {
+          // Only secondaryModelsDirectory is provided, no blob store parameters
+          serverLoRALoader = nil
+        }
+        ModelZoo.externalUrls = [
+          URL(fileURLWithPath: modelsDirectory), URL(fileURLWithPath: secondaryModelsDirectory),
+        ]
+        ModelZoo.isExternalUrlsPreferred = true
       } else {
         print(
           "Warning: Provided models directory path is not a valid directory: \(secondaryModelsDirectory)"
         )
         throw CLIError.invalidModelPath
       }
-      ModelZoo.externalUrls = [
-        URL(fileURLWithPath: modelsDirectory), URL(fileURLWithPath: secondaryModelsDirectory),
-      ]
-      ModelZoo.isExternalUrlsPreferred = true
     } else {
+      // No secondary models directory provided, use only the main models directory
       serverLoRALoader = nil
       ModelZoo.externalUrls = [URL(fileURLWithPath: modelsDirectory)]
       ModelZoo.isExternalUrlsPreferred = true
